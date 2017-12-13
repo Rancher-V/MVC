@@ -16,8 +16,28 @@ namespace ContosoUniversity.Controllers
         private SchoolContext db = new SchoolContext();
 
         // GET: Students
-        public ActionResult Index()
+        public ActionResult Index(string sortOrder)
         {
+            ViewBag.NameSortParm = String.IsNullOrEmpty(sortOrder) ? "name_desc" : "";
+            ViewBag.DataSortParm = sortOrder == "Date" ? "date_desc" : "Date";
+            var students = from s in db.Students
+                           select s;
+
+            switch (sortOrder)
+            {
+                case "name_desc":
+                    students = students.OrderByDescending(s => s.LastName);
+                    break;
+                case "Date":
+                    students = students.OrderBy(s => s.EnrollmentDate);
+                    break;
+                case "date_desc":
+                    students = students.OrderByDescending(s => s.EnrollmentDate);
+                    break;
+                default:
+                    students = students.OrderBy(s => s.LastName);
+                    break;
+            }
             return View(db.Students.ToList());
         }
 
@@ -112,11 +132,15 @@ namespace ContosoUniversity.Controllers
         }
 
         // GET: Students/Delete/5
-        public ActionResult Delete(int? id)
+        public ActionResult Delete(int? id, bool? saveChangesError=false)
         {
             if (id == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            if (saveChangesError.GetValueOrDefault())
+            {
+                ViewBag.ErrorMessage = "Delete faild, try again.";
             }
             Student student = db.Students.Find(id);
             if (student == null)
@@ -127,13 +151,23 @@ namespace ContosoUniversity.Controllers
         }
 
         // POST: Students/Delete/5
-        [HttpPost, ActionName("Delete")]
+        [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult DeleteConfirmed(int id)
-        {
-            Student student = db.Students.Find(id);
-            db.Students.Remove(student);
-            db.SaveChanges();
+        public ActionResult Delete(int id)
+        {           
+            try
+            {
+                //Student student = db.Students.Find(id);
+                //db.Students.Remove(student);
+
+                Student studentToDelete = new Student { ID = id };      //for the high volume
+                db.Entry(studentToDelete).State = EntityState.Deleted;
+                db.SaveChanges();
+            }
+            catch
+            {
+                return RedirectToAction("Delete", new {id = id, saveChangesError = true});
+            }
             return RedirectToAction("Index");
         }
 
