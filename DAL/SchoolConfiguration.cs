@@ -4,6 +4,7 @@ using System.Linq;
 using System.Web;
 using System.Data.Entity;
 using System.Data.Entity.SqlServer;
+using System.Data.Entity.Infrastructure.Interception;
 
 
 namespace ContosoUniversity.DAL
@@ -13,6 +14,8 @@ namespace ContosoUniversity.DAL
         public SchoolConfiguration()
         {
             SetExecutionStrategy("System.Data.sqlClient", () => new SqlAzureExecutionStrategy());
+            //DbInterception.Add(new SchoolInterceptorTransientErrors());
+            //DbInterception.Add(new SchoolInterceptorLogging());
         }
     }
 }
